@@ -1,4 +1,7 @@
 from pathlib import Path
+import pkg_resources
+import sys
+from subprocess import check_call
 
 
 class Args:
@@ -13,10 +16,17 @@ class Args:
     lr_decay_step = 5000  # reduce lr if plateau per 20000 images
     lr_decay_factor = 0.97
 
-    w_ssim = 2  # multiplier for MS_SSIM loss
+    w_ssim = 1.  # multiplier for MS_SSIM loss
 
-    device = 0
+    device = 1
     seed = 42
 
-    path_to_ckpt = Path('../train-jobs/ckpt')
-    path_to_ckpt.mkdir(parents=True, exist_ok=True)
+    ckptPath = Path('../train-jobs/ckpt')
+    ckptPath.mkdir(parents=True, exist_ok=True)
+
+    _installed = {pkg.key for pkg in pkg_resources.working_set}
+    if 'pytorch-msssim' not in _installed:
+        _python = sys.executable
+        check_call(['echo', '[INFO] Install pytorch-msssim'])
+        _pipinstall = ['sudo', _python, '-m', 'pip', 'install', 'pytorch-msssim']
+        check_call(_pipinstall)

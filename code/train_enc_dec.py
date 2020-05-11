@@ -4,16 +4,16 @@ from torch import optim
 from torchvision import transforms
 from torch.utils.data import DataLoader
 
-from pytorch_msssim import MS_SSIM
-
 from args import Args
 from dataset import *
 from model import *
 from utils import *
 
+from pytorch_msssim import MS_SSIM
+
 
 def main():
-    torch.cuda.manual_seed(Args.seed)
+    torch.cuda.manual_seed_all(Args.seed)
 
     train_transform = transforms.Compose([
         transforms.Resize(Args.resized),
@@ -22,7 +22,7 @@ def main():
     ])
     coco_train = COCO(Args.train_path, transform=train_transform)
     trainloader = DataLoader(coco_train, batch_size=Args.batch_size, shuffle=True,
-                             num_worker=min(4, Args.batch_size), pin_memory=True)
+                             num_workers=min(4, Args.batch_size), pin_memory=True)
     loaders = {'train': trainloader}
 
     model = DenseFuse(num_channel=Args.num_channel)
@@ -36,13 +36,13 @@ def main():
     criterions = {'ms_ssim': ms_ssim}
 
     ckpt_name = time.ctime().replace(' ', '-').replace(':', '-')
-    ckptPath = Args.ckpt_path.joinpath(ckpt_name)
+    ckptPath = Args.ckptPath.joinpath(ckpt_name)
     train(loaders, model, criterions, optimizer, Args.num_epochs, ckptPath,
           scheduler=scheduler)
 
 
 def train(loaders, model, criterions, optimizer, num_epochs, ckptPath, **kwargs):
-    print('{} Start Training, Params: (LR, Weight Decay)={}'.format(
+    print('{} -- Start Training, Params: (LR, Weight Decay) = {}'.format(
         time.ctime(),
         str([(group['lr'], group['weight_decay']) for group in optimizer.param_groups])))
 
@@ -52,7 +52,7 @@ def train(loaders, model, criterions, optimizer, num_epochs, ckptPath, **kwargs)
     best_loss = float('inf')
     history = {'mse': [], 'ssim': [], 'total': []}
 
-    for epoch in num_epochs:
+    for epoch in range(num_epochs):
         logger = Logger(len(history))
         num_batches = len(loaders['train'])
         for i, batch in enumerate(loaders['train']):
@@ -98,3 +98,7 @@ def train(loaders, model, criterions, optimizer, num_epochs, ckptPath, **kwargs)
             gstep = epoch * num_batches + (i + 1)
             if scheduler and gstep % 5000 == 0:
                 scheduler.step(loss.item())
+
+
+if __name__ == '__main__':
+    main()

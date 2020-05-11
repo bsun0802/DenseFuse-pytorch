@@ -41,7 +41,7 @@ class DenseBlock(nn.Module):
 
         layers = []
         for i in range(3):
-            layers.append(DenseLayer(inp + i * outp), outp, kernel_size, stride)
+            layers.append(DenseLayer(inp + i * outp, outp, kernel_size, stride))
 
         self.block = nn.Sequential(*layers)
 
